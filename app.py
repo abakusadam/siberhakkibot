@@ -113,6 +113,25 @@ RSS_SOURCES = [
     ("TechCrunch AI", "https://techcrunch.com/category/artificial-intelligence/feed/"),
 ]
 
+def translate_to_turkish(text):
+    """Google Translate ücretsiz endpoint ile İngilizce → Türkçe çeviri."""
+    try:
+        params = urllib.parse.urlencode({
+            "client": "gtx",
+            "sl": "en",
+            "tl": "tr",
+            "dt": "t",
+            "q": text
+        })
+        url = f"https://translate.googleapis.com/translate_a/single?{params}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode())
+        translated = "".join([part[0] for part in data[0] if part[0]])
+        return translated
+    except Exception:
+        return text  # çeviri başarısız olursa orijinali döndür
+
 def fetch_rss(url):
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -149,10 +168,11 @@ def get_daily_news():
     today = datetime.now().strftime("%d.%m.%Y")
     msg = f"🤖 *Günün AI Haberleri — {today}*\n━━━━━━━━━━━━━━━━━━━━\n\n"
     for i, item in enumerate(unique[:8], 1):
+        title_tr = translate_to_turkish(item["title"])
         if item["link"]:
-            msg += f"*{i}.* [{item['title']}]({item['link']})\n\n"
+            msg += f"*{i}.* [{title_tr}]({item['link']})\n\n"
         else:
-            msg += f"*{i}.* {item['title']}\n\n"
+            msg += f"*{i}.* {title_tr}\n\n"
     msg += "━━━━━━━━━━━━━━━━━━━━\n_@siberhakkibot_"
     return msg
 
