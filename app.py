@@ -111,6 +111,18 @@ def web_search_fallback(question):
 RSS_SOURCES = [
     ("VentureBeat AI", "https://venturebeat.com/category/ai/feed/"),
     ("TechCrunch AI", "https://techcrunch.com/category/artificial-intelligence/feed/"),
+    ("The Verge AI", "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"),
+    ("Ars Technica AI", "https://feeds.arstechnica.com/arstechnica/index"),
+]
+
+# Filtre: Bu kelimelerden biri başlıkta geçiyorsa haberi al
+AI_KEYWORDS = [
+    "gpt", "claude", "gemini", "llama", "mistral", "perplexity",
+    "openai", "anthropic", "google deepmind", "meta ai", "xai", "grok",
+    "model", "agent", "agentic", "llm", "multimodal", "reasoning",
+    "benchmark", "release", "launch", "new ai", "ai model",
+    "chatgpt", "copilot", "sora", "dall-e", "stable diffusion",
+    "transformer", "fine-tun", "rag", "mcp", "tool use",
 ]
 
 def translate_to_turkish(text):
@@ -152,16 +164,21 @@ def parse_rss(content, max_items=4):
             items.append({"title": title, "link": link})
     return items
 
+def is_relevant(title):
+    """Başlık AI model/agent konularıyla ilgiliyse True döner."""
+    title_lower = title.lower()
+    return any(kw in title_lower for kw in AI_KEYWORDS)
+
 def get_daily_news():
     all_items = []
     for _, rss_url in RSS_SOURCES:
         content = fetch_rss(rss_url)
         if content:
-            all_items.extend(parse_rss(content, max_items=4))
+            all_items.extend(parse_rss(content, max_items=10))
 
     seen, unique = set(), []
     for item in all_items:
-        if item["title"] not in seen:
+        if item["title"] not in seen and is_relevant(item["title"]):
             seen.add(item["title"])
             unique.append(item)
 
